@@ -1,8 +1,18 @@
 # estimate_mediation
 
+################################################################################
+# To-Dos:
+# # create code to make sure variable names are in dataset (for all helpers or in main function)
+# # Add RE-Mean (commented out and not tested)
+# # Add code to support lower & upper case of model (e.g., sl or SL)
+# # Return other coefficients so you can compute TNIE, PNIE, etc 
+# 
+# 
+################################################################################
 
-# Helpers 
-
+# ═══════════════════
+#    Helpers  
+# ═══════════════════
 
 ## PS helper 
 .fit_ps <- function(data, treat, covariates, cluster, ps_model) {
@@ -158,22 +168,31 @@
   list(data = data, outmod = outmod)
 }
 
+# ═══════════════════
+#    Function 
+# ═══════════════════
+
 # Estimation function 
 estimate_mediation <- function(data, ps_model, med_model, out_model, treat, covariates, mediator, outcome, cluster) {
   
   # PS 
   ps_res <- .fit_ps(data, treat, covariates, cluster, ps_model)
+  
+  # Update data to include iptw
+  data <- ps_res$data
+  
   # Mediator
   med_res <- .fit_mediator(data, treat, covariates, mediator, cluster, med_model)
+  
   # Outcome 
   out_res <- .fit_outcome(data, treat, covariates, mediator, outcome, cluster, out_model)
   
   # Point estimates
-  a_est <- med_res$medmod$coefficients[[treat]]
-  b_est <- out_res$outmod$coefficients[[mediator]]
-  c_est <- out_res$outmod$coefficients[[treat]]
+  a_est <- coef(med_res$medmod)[[treat]]
+  b_est <- coef(out_res$outmod)[[mediator]]
+  c_est <- coef(out_res$outmod)[[treat]]
   
-  # # SE 
+  # # SE
   # a_se <- summary(med_res$medmod)$coef[treat, "Std. Error"]
   # b_se <- summary(out_res$outmod)$coef[mediator, "Std. Error"]
   # c_se <- summary(out_res$outmod)$coef[treat, "Std. Error"]
@@ -181,13 +200,11 @@ estimate_mediation <- function(data, ps_model, med_model, out_model, treat, cova
   list(
     NIE_est = a_est * b_est,
     NDE_est = c_est,
-    a_est, 
-    b_est, 
-    c_est
+    a_est = a_est, 
+    b_est = b_est, 
+    c_est = c_est
   )
 }
-
-
 
 
 
